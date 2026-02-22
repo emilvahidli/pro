@@ -1,0 +1,143 @@
+services:
+  frontend:
+    build:
+      context: ./proep.az
+      args:
+        VITE_API_URL: http://localhost:4004
+    ports:
+      - "3080:80"
+    env_file:
+      - .env
+    depends_on:
+      proep-backend:
+        condition: service_started
+
+  # Proep.az backend (messages API + Telegram)
+  proep-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "4004:4000"
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-pro}
+      DB_PASSWORD: ${DB_PASSWORD:-Projson!}
+      DB_NAME: ${DB_NAME:-proep}
+      TZ: Asia/Baku
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN:-8486628690:AAErAISU1RrNSOnA5V6gWV7K1VxM3QOQx8I}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:--5072517302}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Admin panel frontend (Vite build served by nginx)
+  admin-dashboard:
+    build:
+      context: ./admin.proep.az
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: http://localhost:4000
+    ports:
+      - "5173:80"
+    depends_on:
+      - admin-service
+    restart: unless-stopped
+
+  # Admin panel backend (Express with /api/subscriptions, etc.)
+  admin-service:
+    build:
+      context: ./admin.proep.az
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    environment:
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-pro}
+      DB_PASSWORD: ${DB_PASSWORD:-Projson!}
+      DB_NAME: ${DB_NAME:-proep}
+      TZ: Asia/Baku
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  core-job-service:
+    build:
+      context: ./core
+      dockerfile: Dockerfile
+    ports:
+      - "4100:4100"
+    env_file:
+      - .env
+    environment:
+      PORT: 4100
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-pro}
+      DB_PASSWORD: ${DB_PASSWORD:-Projson!}
+      DB_NAME: ${DB_NAME:-proep}
+      TZ: Asia/Baku
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  scraping-service:
+    build:
+      context: ./scraping
+      dockerfile: Dockerfile
+    ports:
+      - "4200:4200"
+    env_file:
+      - .env
+    environment:
+      PORT: 4200
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-pro}
+      DB_PASSWORD: ${DB_PASSWORD:-Projson!}
+      DB_NAME: ${DB_NAME:-proep}
+      TZ: Asia/Baku
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-pro}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-Projson!}
+      POSTGRES_DB: ${DB_NAME:-proep}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./admin.proep.az/init.sql:/docker-entrypoint-initdb.d/01-admin.sql
+      - ./scraping/schema.sql:/docker-entrypoint-initdb.d/02-scraping.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pro} -d ${DB_NAME:-proep}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:

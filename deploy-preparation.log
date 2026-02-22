@@ -1,0 +1,42 @@
+[2026-02-22T10:54:37.427Z] [INFO] === Deployment preparation started ===
+[2026-02-22T10:54:37.431Z] [INFO] Project root: /Users/emil.vahidli/Desktop/pro
+[2026-02-22T10:54:37.431Z] [INFO] Deploy dir:   /Users/emil.vahidli/Desktop/pro/deploy
+[2026-02-22T10:54:37.432Z] [INFO] Loaded .env
+[2026-02-22T10:54:37.432Z] [INFO] Scanning project at: /Users/emil.vahidli/Desktop/pro
+[2026-02-22T10:54:37.440Z] [INFO] Included (kept): 325 files
+[2026-02-22T10:54:37.440Z] [INFO] Excluded (removed from bundle): 17 files
+[2026-02-22T10:54:37.440Z] [INFO] --- Excluded files (sample, max 50) ---
+[2026-02-22T10:54:37.441Z] [INFO]   - .DS_Store
+[2026-02-22T10:54:37.441Z] [INFO]   - .env
+[2026-02-22T10:54:37.441Z] [INFO]   - DISK-RECOVERY.md
+[2026-02-22T10:54:37.441Z] [INFO]   - admin.proep.az/.DS_Store
+[2026-02-22T10:54:37.441Z] [INFO]   - admin.proep.az/src/.DS_Store
+[2026-02-22T10:54:37.441Z] [INFO]   - core/.DS_Store
+[2026-02-22T10:54:37.441Z] [INFO]   - deploy-preparation.log
+[2026-02-22T10:54:37.441Z] [INFO]   - log.sh
+[2026-02-22T10:54:37.441Z] [INFO]   - proep.az/.DS_Store
+[2026-02-22T10:54:37.441Z] [INFO]   - proep.az/.env
+[2026-02-22T10:54:37.441Z] [INFO]   - proep.az/src/.DS_Store
+[2026-02-22T10:54:37.441Z] [INFO]   - proep.az/src/app/.DS_Store
+[2026-02-22T10:54:37.441Z] [INFO]   - proep_backup.sql
+[2026-02-22T10:54:37.441Z] [INFO]   - scraping/.DS_Store
+[2026-02-22T10:54:37.441Z] [INFO]   - scraping/src/.DS_Store
+[2026-02-22T10:54:37.441Z] [INFO]   - scraping/src/services/.DS_Store
+[2026-02-22T10:54:37.441Z] [INFO]   - scraping/src/services/sources/.DS_Store
+[2026-02-22T10:54:37.542Z] [INFO] Bundle created: 325 files copied to /Users/emil.vahidli/Desktop/pro/deploy
+[2026-02-22T10:54:37.545Z] [WARNING] WARN: psql not found; skipping migrations. Install PostgreSQL client or use --skip-migrations.
+[2026-02-22T10:54:37.545Z] [INFO] Installing production deps: admin.proep.az
+[2026-02-22T10:54:56.381Z] [INFO] Building: admin.proep.az
+[2026-02-22T10:54:56.520Z] [WARNING] WARN: Build failed for admin.proep.az: Command failed: npm run build
+[2026-02-22T10:54:56.520Z] [INFO] Installing production deps: scraping
+[2026-02-22T10:55:02.095Z] [WARNING] WARN: npm ci failed for scraping (trying npm install --omit=dev)
+[2026-02-22T10:55:07.702Z] [INFO] Building: scraping
+[2026-02-22T10:55:07.812Z] [WARNING] WARN: Build failed for scraping: Command failed: npm run build
+[2026-02-22T10:55:07.812Z] [INFO] Installing production deps: core
+[2026-02-22T10:55:08.547Z] [INFO] Building: core
+[2026-02-22T10:55:08.664Z] [WARNING] WARN: Build failed for core: Command failed: npm run build
+[2026-02-22T10:55:08.664Z] [INFO] --- Summary ---
+[2026-02-22T10:55:08.664Z] [INFO] Included: 325 files
+[2026-02-22T10:55:08.664Z] [INFO] Excluded: 17 files
+[2026-02-22T10:55:08.664Z] [INFO] Bundle: /Users/emil.vahidli/Desktop/pro/deploy
+[2026-02-22T10:55:08.664Z] [INFO] === Deployment preparation finished ===

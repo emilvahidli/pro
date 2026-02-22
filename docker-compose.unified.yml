@@ -1,0 +1,166 @@
+# Unified proep.az ecosystem
+# Run: ./start.sh  or  docker compose -f docker-compose.unified.yml up --build -d
+
+services:
+  # Admin panel (admin.proep.az) — Vite build served by nginx
+  admin-dashboard:
+    build:
+      context: ./admin.proep.az
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: http://localhost:4002
+    ports:
+      - "3002:80"
+    depends_on:
+      admin-service:
+        condition: service_started
+    restart: unless-stopped
+
+  # Admin panel backend (Express: /api, /auth)
+  admin-service:
+    build:
+      context: ./admin.proep.az
+      dockerfile: Dockerfile
+    ports:
+      - "4002:4000"
+    env_file: .env
+    environment:
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-pro}
+      DB_PASSWORD: ${DB_PASSWORD:-Projson!}
+      DB_NAME: ${DB_NAME:-proep}
+      TZ: Asia/Baku
+      COMPOSE_FILE: /compose/docker-compose.unified.yml
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/compose:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Proep.az public site — Vite build served by nginx
+  proep-frontend:
+    build:
+      context: ./proep.az
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:4001
+    ports:
+      - "3001:80"
+    depends_on:
+      - proep-backend
+    restart: unless-stopped
+
+  # Proep.az messages API (POST /api/messages, Telegram)
+  proep-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4000"
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-pro}
+      DB_PASSWORD: ${DB_PASSWORD:-Projson!}
+      DB_NAME: ${DB_NAME:-proep}
+      TZ: Asia/Baku
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Scraping service — jobs, scrapers, subscriptions, notifications
+  scraping-service:
+    build:
+      context: ./scraping
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    env_file: .env
+    environment:
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-pro}
+      DB_PASSWORD: ${DB_PASSWORD:-Projson!}
+      DB_NAME: ${DB_NAME:-proep}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      TZ: Asia/Baku
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  # Core job scheduler — cron-based job execution, execution logs
+  core-job-service:
+    build:
+      context: ./core
+      dockerfile: Dockerfile
+    ports:
+      - "4100:4100"
+    env_file: .env
+    environment:
+      PORT: 4100
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-pro}
+      DB_PASSWORD: ${DB_PASSWORD:-Projson!}
+      DB_NAME: ${DB_NAME:-proep}
+      TZ: Asia/Baku
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${DB_USER:-pro}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-Projson!}
+      POSTGRES_DB: ${DB_NAME:-proep}
+      PGTZ: Asia/Baku
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pro} -d ${DB_NAME:-proep}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # Optional: reverse proxy (admin.proep.az → 3000, proep.az → 3001, /api → 4000)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - admin-dashboard
+      - proep-frontend
+      - proep-backend
+      - scraping-service
+    profiles:
+      - with-nginx
+
+volumes:
+  pgdata:

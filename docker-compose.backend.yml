@@ -1,0 +1,44 @@
+# Minimal stack: proep-backend + PostgreSQL (visitor tracking, messages API).
+# Usage: docker compose -f docker-compose.backend.yml up -d
+# Requires admin schema and admin.site_visitors (e.g. from admin.proep.az/init.sql or db/schema).
+
+services:
+  proep-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "4004:4000"
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-pro}
+      DB_PASSWORD: ${DB_PASSWORD:-Projson!}
+      DB_NAME: ${DB_NAME:-proep}
+      TZ: Asia/Baku
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${DB_USER:-pro}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-Projson!}
+      POSTGRES_DB: ${DB_NAME:-proep}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_backend:/var/lib/postgresql/data
+      - ./admin.proep.az/init.sql:/docker-entrypoint-initdb.d/01-admin.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pro} -d ${DB_NAME:-proep}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata_backend:
