@@ -1,0 +1,20 @@
+# Environment and secrets (never commit)
+.env
+.env.local
+.env.*.local
+
+# Logs and temp
+*.log
+deploy-preparation.log
+tmp/
+temp/
+.cache/
+
+# OS and editors
+.DS_Store
+.idea/
+*.sw?
+*.suo
+
+# Optional: large or sensitive files (uncomment if needed)
+# proep_backup.sql
