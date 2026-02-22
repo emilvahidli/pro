@@ -147,13 +147,15 @@ services:
     ports:
       - "6379:6379"
 
-  # Optional: reverse proxy (admin.proep.az → 3000, proep.az → 3001, /api → 4000)
+  # Reverse proxy (HTTP→HTTPS, SSL via Let's Encrypt)
   nginx:
     image: nginx:alpine
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - admin-dashboard
       - proep-frontend
